@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1d19">
+<title>弹道下坠速查</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-thumb phone card. Controls on top, the range card (table) as the hero, trajectory strip and notes below. Same field-ledger family as the other tools. */
+:root {
+  --bg: #e9e6dc;
+  --panel: #f6f4ec;
+  --ink: #23251f;
+  --muted: #6b6c5f;
+  --line: #cfcabb;
+  --brass: #8d6a1f;
+  --brass-soft: #e7d9b4;
+  --good: #3d6b34;
+  --warn: #9a6a12;
+  --bad: #a3392b;
+  --good-soft: #dbe6d3;
+  --f-display: "Saira Condensed", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --f-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, "Noto Sans SC", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1d19; --panel: #23261f; --ink: #e6e3d6; --muted: #9a9a88; --line: #3a3d33;
+    --brass: #d2a94f; --brass-soft: #3b3220; --good: #8cc47a; --warn: #e0b04f; --bad: #e47c69;
+    --good-soft: #243321; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1d19; --panel: #23261f; --ink: #e6e3d6; --muted: #9a9a88; --line: #3a3d33;
+  --brass: #d2a94f; --brass-soft: #3b3220; --good: #8cc47a; --warn: #e0b04f; --bad: #e47c69;
+  --good-soft: #243321; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(14px, env(safe-area-inset-left, 0px));
+  padding-right: max(14px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 40px;
+}
+[hidden] { display: none !important; }
+a { color: var(--brass); }
+.wrap { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.wrap > * { min-width: 0; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+h1 { font-family: var(--f-display); font-weight: 900; font-size: 28px; line-height: 1.1; margin: 0; letter-spacing: .02em; }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--brass); }
+
+.controls { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field > label, .field > .lab { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+select, input[type="number"] {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  padding: 9px 10px; width: 100%; min-width: 0; border-radius: 0; -webkit-appearance: none; appearance: none;
+}
+select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
+input[type="number"] { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.vel { display: flex; min-width: 0; }
+.vel input { flex: 1; }
+.vel button { font: inherit; font-size: 13px; border: 1px solid var(--line); border-left: 0; background: var(--bg); color: var(--muted); padding: 0 10px; cursor: pointer; white-space: nowrap; }
+.vel button:disabled { opacity: .45; cursor: default; }
+select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--ink); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 8px 4px; border: 0; background: var(--panel); color: var(--ink); cursor: pointer; line-height: 1.25; }
+.seg button + button { border-left: 1px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+.summary { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--f-mono); font-size: 12px; }
+.chip { border: 1px solid var(--line); background: var(--panel); padding: 2px 8px; white-space: nowrap; }
+.chip b { font-weight: 600; color: var(--brass); }
+
+.card { background: var(--panel); border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 8px; text-align: right; white-space: nowrap; }
+th { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .03em; border-bottom: 2px solid var(--ink); line-height: 1.3; }
+th small { display: block; font-weight: 400; font-family: var(--f-mono); }
+td { font-family: var(--f-mono); font-size: 15px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+td.d { text-align: left; font-weight: 600; }
+th:first-child { text-align: left; }
+td.drop { font-weight: 600; }
+.lv0 { color: var(--good); }
+.lv1 { color: var(--warn); }
+.lv2 { color: var(--bad); }
+.dim { color: var(--muted); font-weight: 400; }
+tr.zero td { background: var(--good-soft); }
+tr.zero td.d::after { content: " 归零"; font-family: var(--f-body); font-size: 11px; font-weight: 700; color: var(--good); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); padding: 8px 10px; border-top: 1px solid var(--line); }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 5px; vertical-align: 1px; background: currentColor; }
+
+.chart { padding: 10px 8px 4px; }
+.chart h2, .notes h2 { font-size: 15px; font-weight: 900; margin: 0 2px 6px; letter-spacing: .04em; }
+.chart svg { display: block; width: 100%; height: auto; }
+
+.notes { display: grid; gap: 4px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; }
+footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+@media (min-width: 560px) { h1 { font-size: 34px; } td { font-size: 16px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>弹道下坠速查</h1>
+    <span class="eyebrow">逃离塔科夫 · 弹道</span>
+  </header>
+
+  <section class="controls" aria-label="设置">
+    <div class="row">
+      <div class="field"><label for="cal">口径</label><select id="cal"></select></div>
+      <div class="field"><label for="ammo">弹药</label><select id="ammo"></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="zero">归零距离</label><select id="zero"></select></div>
+      <div class="field">
+        <label for="v0">初速（米/秒）</label>
+        <div class="vel"><input id="v0" type="number" inputmode="numeric" min="50" max="2000" step="5"><button type="button" id="v0reset" title="恢复弹药默认初速">默认</button></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <span class="lab">瞄具高度</span>
+        <div class="seg" role="group" aria-label="瞄具高度" data-key="sh">
+          <button type="button" data-v="0.04">低</button>
+          <button type="button" data-v="0.06">中</button>
+          <button type="button" data-v="0.08">高</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lab">距离表</span>
+        <div class="seg" role="group" aria-label="距离表" data-key="range">
+          <button type="button" data-v="near">0–300</button>
+          <button type="button" data-v="far">0–800</button>
+        </div>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+  </section>
+
+  <section class="card" aria-label="弹道表">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">距离<small>米</small></th>
+          <th scope="col">下坠<small>厘米</small></th>
+          <th scope="col">抬枪<small>密位</small></th>
+          <th scope="col">飞行<small>毫秒</small></th>
+          <th scope="col">存速<small>米/秒</small></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="legend"><span class="lv0">±10 厘米内，直接瞄</span><span class="lv1">10–30 厘米，瞄高一点</span><span class="lv2">超过 30 厘米，要抬枪</span></div>
+  </section>
+
+  <section class="card chart" aria-label="弹道曲线">
+    <h2>弹道曲线 <span class="dim" style="font-size:12px;font-weight:400">相对准星，阴影为 ±10 厘米</span></h2>
+    <svg id="svg" viewBox="0 0 420 210" role="img" aria-label="相对准星的弹道高度"></svg>
+  </section>
+
+  <section class="notes" aria-labelledby="h-how">
+    <h2 id="h-how">怎么看</h2>
+    <ul>
+      <li><b>下坠</b>：瞄准目标中心时，子弹落点比准星低（负数）或高（正数）多少厘米。</li>
+      <li><b>抬枪</b>：要打中，准星需要往上抬多少密位（mil）。1 密位在 100 米处约 10 厘米，在 300 米处约 30 厘米。带密位分划的瞄具可以直接对着刻度用。</li>
+      <li><b>初速</b>：默认是弹药的标准初速。枪管长短会改变初速，改装界面里能看到这把枪的实际初速，填进来会更准。</li>
+      <li><b>瞄具高度</b>：准星比枪管高多少。机瞄和低位红点选「低」，一般瞄具选「中」，高位或侧装选「高」。只影响 100 米以内。</li>
+      <li>归零距离要和游戏里瞄具上设置的一致（默认键位 Page Up / Page Down 调整）。</li>
+    </ul>
+  </section>
+
+  <footer>按游戏的弹道模型计算（G1 阻力表 + 弹药弹道系数，每 0.01 秒模拟一次，与 Tarkov Gunsmith 相同）。默认按水平射击计算。弹药数据来自 tarkov.dev，2026 年 10 月 31 日 快照，版本更新后数值可能变化。</footer>
+</div>
+
+<script>
+// EFT ballistic model (as used by the game and Tarkov Gunsmith): G1 drag table indexed in 0.05 Mach steps,
+// drag deceleration = Cd(v) * (1.2 * pi / 8) * 0.0014223 / BC * v^2, gravity 9.81, 0.01 s steps,
+// position += v*dt + 5e-5*a, v += a*dt.
+const G1 = [[0,.2629],[.05,.2558],[.1,.2487],[.15,.2413],[.2,.2344],[.25,.2278],[.3,.2214],[.35,.2155],[.4,.2104],[.45,.2061],[.5,.2032],[.55,.202],[.6,.2034],[.7,.2165],[.725,.223],[.75,.2313],[.775,.2417],[.8,.2546],[.825,.2706],[.85,.2901],[.875,.3136],[.9,.3415],[.925,.3734],[.95,.4084],[.975,.4448],[1,.4805],[1.025,.5136],[1.05,.5427],[1.075,.5677],[1.1,.5883],[1.125,.6053],[1.15,.6191],[1.2,.6393],[1.25,.6518],[1.3,.6589],[1.35,.6621],[1.4,.6625],[1.45,.6607],[1.5,.6573],[1.55,.6528],[1.6,.6474],[1.65,.6413],[1.7,.6347],[1.75,.628],[1.8,.621],[1.85,.6141],[1.9,.6072],[1.95,.6003],[2,.5934],[2.05,.5867],[2.1,.5804],[2.15,.5743],[2.2,.5685],[2.25,.563],[2.3,.5577],[2.35,.5527],[2.4,.5481],[2.45,.5438],[2.5,.5397],[2.6,.5325],[2.7,.5264],[2.8,.5211],[2.9,.5168],[3,.5133],[3.1,.5105],[3.2,.5084],[3.3,.5067],[3.4,.5054],[3.5,.504],[3.6,.503],[3.7,.5022],[3.8,.5016],[3.9,.501],[4,.5006],[4.2,.4998],[4.4,.4995],[4.6,.4992],[4.8,.499],[5,.4988]];
+function cd(v) {
+  const n = Math.floor(v / 343 / 0.05);
+  if (n <= 0) return 0;
+  if (n > G1.length - 1) return G1[G1.length - 1][1];
+  const m1 = G1[n - 1][0] * 343, m2 = G1[n][0] * 343, b = G1[n - 1][1];
+  return (G1[n][1] - b) / (m2 - m1) * (v - m1) + b;
+}
+const DT = 0.01, GRAV = 9.81, KDRAG = 1.2 * Math.PI / 8 * 0.0014223;
+// Returns samples [x, y, t, v] for each step until x >= maxX (or 1500 steps).
+function fly(v0, bc, angle, maxX) {
+  const k = KDRAG / bc;
+  let x = 0, y = 0, vx = v0 * Math.cos(angle), vy = v0 * Math.sin(angle), t = 0;
+  const pts = [[0, 0, 0, v0]];
+  for (let i = 0; i < 1500 && x < maxX; i++) {
+    const v = Math.hypot(vx, vy);
+    const a = cd(v) * k * v * v;
+    const ax = -a * vx / v, ay = -GRAV - a * vy / v;
+    x += vx * DT + 5e-5 * ax;
+    y += vy * DT + 5e-5 * ay;
+    vx += ax * DT; vy += ay * DT; t += DT;
+    pts.push([x, y, t, Math.hypot(vx, vy)]);
+  }
+  return pts;
+}
+function at(pts, X) {
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i][0] >= X) {
+      const p = pts[i - 1], q = pts[i], f = (X - p[0]) / (q[0] - p[0] || 1);
+      return [X, p[1] + (q[1] - p[1]) * f, p[2] + (q[2] - p[2]) * f, p[3] + (q[3] - p[3]) * f];
+    }
+  }
+  return null;
+}
+// Bore angle so the bullet crosses the line of sight (height h above bore, level) at zero distance Z.
+function zeroAngle(v0, bc, Z, h) {
+  let lo = -0.02, hi = 0.15;
+  for (let i = 0; i < 50; i++) {
+    const mid = (lo + hi) / 2;
+    const p = at(fly(v0, bc, mid, Z + 1), Z);
+    if (!p || p[1] < h) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+function table(v0, bc, Z, h, dists) {
+  const ang = zeroAngle(v0, bc, Z, h);
+  const pts = fly(v0, bc, ang, Math.max(...dists) + 1);
+  return { ang, rows: dists.map(d => { const p = at(pts, d); if (!p) return { d, ok: false }; const dy = p[1] - h; return { d, ok: true, dropCm: dy * 100, mil: -dy / d * 1000, tofMs: p[2] * 1000, v: p[3] }; }), pts };
+}
+if (typeof module !== "undefined") module.exports = { cd, fly, at, zeroAngle, table };
+
+</script>
+<script>
+(function () {
+  "use strict";
+  const AMMO = [["1143x23ACP",".45 AP",299,0.197,66,38,0],["1143x23ACP",".45 FMJ",340,0.131,72,25,0],["1143x23ACP",".45LM",290,0.161,76,19,1],["1143x23ACP",".45 HS",274,0.114,100,13,0],["1143x23ACP",".45 RIP",293,0.131,130,3,0],["127x33","FMJ B",635,0.131,113,57,0],["127x33","FMJ",440,0.131,85,40,0],["127x33","铜弹",460,0.163,94,33,0],["127x33","Hawk JSP",465,0.166,122,26,0],["127x33","JHP",440,0.122,147,12,0],["127x55","PS12B",570,0.151,102,46,0],["127x55","PS12",300,0.426,115,28,0],["127x55","PS12A",870,0.091,165,10,0],["127x99","M903",1220,0.347,160,115,0],["127x99","M33",887,0.622,190,56,0],["127x99","M21",867,0.614,220,45,1],["127x99","HP",880,0.275,260,34,0],["12g","AP-20",510,0.383,164,37,0],["12g",".50 BMG",410,0.582,197,26,0],["12g","食人鱼",310,0.257,25,24,0],["12g","P-6u 12c",430,0.057,150,20,0],["12g","FTX",480,0.188,183,20,0],["12g","P-3 12c",410,0.116,140,17,0],["12g","2-Sabot",415,0.074,85,17,0],["12g","12/70独头弹",370,0.121,167,15,0],["12g","CSP",442,0.099,206,14,0],["12g","Grizzly",390,0.222,190,12,0],["12g","SF",594,0.2,220,5,0],["12g","12/70 RIP",410,0.055,265,2,0],["20g","TSS AP",482,0.032,155,30,0],["20g","DGS",476,0.032,143,25,0],["20g","P-6u 20c",445,0.144,135,17,0],["20g","20/70独头弹",415,0.121,154,16,0],["20g","P-3 20c",425,0.156,120,14,0],["20g","Dev.",405,0.032,198,5,0],["23x75","破障",420,0.287,192,39,0],["366TKM","366 AP",602,0.373,90,42,0],["366TKM","EKO",770,0.135,73,30,0],["366TKM","FMJ",580,0.202,98,23,0],["366TKM","Geksa",550,0.241,110,14,0],["46x30","AP SX",680,0.14,35,53,0],["46x30","FMJ SX",620,0.228,43,40,0],["46x30","JSP SX",579,0.175,46,32,0],["46x30","Subsonic SX",290,0.437,52,23,0],["46x30","Action SX",690,0.175,65,18,0],["545x39","7N39",905,0.283,37,62,0],["545x39","BS",830,0.254,45,54,0],["545x39","BP",890,0.252,48,45,0],["545x39","7N40",915,0.252,55,42,0],["545x39","BT",880,0.209,54,37,1],["545x39","PP",886,0.254,51,34,0],["545x39","PS",890,0.235,56,28,0],["545x39","FMJ",884,0.266,55,24,0],["545x39","T",883,0.223,59,20,1],["545x39","US",303,0.355,65,17,0],["545x39","SP",873,0.246,67,15,0],["545x39","PRS",866,0.266,70,13,0],["545x39","HP",884,0.246,76,9,0],["556x45NATO","SSA AP",1013,0.196,38,57,0],["556x45NATO","M995",1013,0.196,42,53,0],["556x45NATO","M855A1",945,0.233,49,44,0],["556x45NATO","M856A1",940,0.269,52,38,1],["556x45NATO","SOST",902,0.269,53,33,0],["556x45NATO","M855",922,0.233,54,31,0],["556x45NATO","FMJ",957,0.252,57,23,0],["556x45NATO","M856",874,0.241,60,18,1],["556x45NATO","Mk255 Mod0",936,0.335,72,11,0],["556x45NATO","HP",947,0.209,79,7,0],["556x45NATO","WG",936,0.335,88,3,0],["57x28","SS190",715,0.233,49,37,0],["57x28","L191",715,0.233,53,33,1],["57x28","SB193",299,0.233,59,27,0],["57x28","SS197SR",594,0.233,62,25,0],["57x28","SS198LF",792,0.233,70,17,0],["57x28","R37.X",724,0.075,81,11,0],["57x28","R37.F",729,0.075,98,8,0],["58x42","DVC12",872,0.233,46,52,0],["58x42","DVX12",850,0.233,48,47,1],["58x42","DBP191",840,0.233,53,39,0],["58x42","DBX95",910,0.233,57,33,1],["68x51","Hybrid",914,0.388,72,47,0],["68x51","FMJ",899,0.405,80,36,0],["762x25TT","TT 995",940,0.23,32,37,0],["762x25TT","TT 855A1",900,0.17,34,31,0],["762x25TT","TT 856A1",900,0.18,36,27,1],["762x25TT","Pst",430,0.126,50,25,0],["762x25TT","PT",415,0.124,55,18,1],["762x25TT","P gl",430,0.127,58,14,0],["762x25TT","AKBS",425,0.127,58,12,0],["762x25TT","FMJ43",427,0.055,60,11,0],["762x25TT","LRN",375,0.146,64,8,0],["762x25TT","LRNPC",385,0.119,66,7,0],["762x35","AP",635,0.334,51,48,0],["762x35","CBJ",725,0.334,58,43,0],["762x35","M62",442,0.334,54,36,1],["762x35","BPZ",605,0.334,60,30,0],["762x35","V-Max",723,0.334,72,20,0],["762x35","Whisper",853,0.334,90,14,0],["762x39","MAI AP",875,0.28,53,58,0],["762x39","BP",730,0.28,58,47,0],["762x39","PP",732,0.28,59,41,0],["762x39","PS",717,0.28,61,35,0],["762x39","T-45M1",720,0.227,65,30,1],["762x39","US",301,0.379,56,29,0],["762x39","FMJ",775,0.28,63,26,0],["762x39","SP",772,0.28,68,20,0],["762x39","HP",754,0.278,80,15,0],["762x51","M993",930,0.43,70,65,0],["762x51","M61",833,0.419,73,60,0],["762x51","M80A1",929,0.5,75,55,0],["762x51","M80",820,0.398,80,43,0],["762x51","M62",820,0.388,82,42,1],["762x51","BPZ FMJ",840,0.41,83,37,0],["762x51","TCW SP",800,0.446,85,30,0],["762x51","Ultra Nosler",800,0.475,105,15,0],["762x54R","7N37",785,0.425,72,70,0],["762x54R","SNB",875,0.342,75,62,0],["762x54R","7BT1",875,0.331,78,55,1],["762x54R","7N1",875,0.342,84,45,0],["762x54R","LPS",865,0.334,81,42,0],["762x54R","T46M",800,0.289,82,41,1],["762x54R","FMJ",760,0.334,84,36,0],["762x54R","SP BT",703,0.334,92,31,0],["762x54R","HP BT",807,0.334,102,26,0],["784x49","ME",838,0.346,80,42,0],["784x49","LOKT",838,0.346,96,24,0],["86x70","AP",849,0.477,115,79,0],["86x70","FMJ",900,0.48,122,47,0],["86x70","UCW",849,0.48,142,32,0],["86x70","TAC-X",880,0.476,196,18,0],["93x64","7N33",790,0.38,108,56,0],["93x64","FMJ",793,0.27,115,44,0],["93x64","SP",697,0.414,129,37,0],["9x18PM","PBM",519,0.061,40,28,0],["9x18PM","PstM",420,0.096,58,24,0],["9x18PM","BZhT",325,0.067,53,18,0],["9x18PM","RG028",330,0.106,65,13,0],["9x18PM","Pst",298,0.097,50,12,0],["9x18PM","PPT",301,0.104,59,8,1],["9x18PM","PPe",297,0.092,61,7,0],["9x18PM","PRS",302,0.101,58,6,0],["9x18PM","PS PPO",330,0.104,55,6,0],["9x18PM","P",302,0.101,50,5,0],["9x18PM","PSO",315,0.099,54,5,0],["9x18PM","PSV",280,0.124,69,3,0],["9x18PM","SP7",420,0.069,77,2,0],["9x18PM","SP8",250,0.083,67,1,0],["9x19PARA","7N31",560,0.051,44,39,0],["9x19PARA","AP 6.3",392,0.121,52,30,0],["9x19PARA","Pst",457,0.068,54,20,0],["9x19PARA","M882",385,0.068,56,18,0],["9x19PARA","绿色曳光",365,0.105,58,14,1],["9x19PARA","PSO",340,0.131,59,10,0],["9x19PARA","Luger CCI",420,0.131,70,10,0],["9x19PARA","QuakeMaker",290,0.15,85,8,0],["9x19PARA","RIP",381,0.075,102,2,0],["9x21","7N42",400,0.156,49,38,0],["9x21","SP13",410,0.084,52,32,1],["9x21","7U4",300,0.117,53,27,0],["9x21","SP10",410,0.084,59,22,0],["9x21","SP11",413,0.138,65,18,0],["9x21","SP12",415,0.117,80,15,0],["9x33R","FMJ",385,0.163,70,35,0],["9x33R","JHP",425,0.155,88,24,0],["9x33R","HP",481,0.124,99,18,0],["9x33R","SP",455,0.189,108,12,0],["9x39","BP",295,0.395,58,54,0],["9x39","SP-6",305,0.414,60,48,0],["9x39","PAB-9",320,0.395,62,43,0],["9x39","SPP",310,0.189,68,35,0],["9x39","SP-5",290,0.353,71,28,0],["9x39","FMJ",330,0.343,75,17,0]];
+  const CALS = [
+    ["突击步枪", [["545x39", "5.45×39"], ["556x45NATO", "5.56×45"], ["762x39", "7.62×39"], ["762x35", ".300 BLK"], ["58x42", "5.8×42"], ["68x51", "6.8×51"], ["366TKM", ".366 TKM"], ["9x39", "9×39"]]],
+    ["精确射手 / 狙击", [["762x51", "7.62×51"], ["762x54R", "7.62×54R"], ["784x49", ".308 ME"], ["86x70", ".338 拉普"], ["93x64", "9.3×64"], ["127x55", "12.7×55"], ["127x99", ".50 BMG"]]],
+    ["手枪 / 冲锋枪", [["9x19PARA", "9×19"], ["9x18PM", "9×18 PM"], ["9x21", "9×21"], ["762x25TT", "7.62×25 TT"], ["1143x23ACP", ".45 ACP"], ["46x30", "4.6×30"], ["57x28", "5.7×28"], ["9x33R", ".357 马格南"], ["127x33", ".50 AE"]]],
+    ["霰弹枪（独头弹）", [["12g", "12 号"], ["20g", "20 号"], ["23x75", "23×75"]]]
+  ];
+  const ZEROS = [25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 1000];
+  const NEAR = [10, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300];
+  const FAR = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
+  const KEY = "tkv-drop-v1";
+  const $ = id => document.getElementById(id);
+  const state = { cal: "556x45NATO", ammo: "M855A1", zero: 100, v0: null, sh: "0.06", range: "near" };
+  try { Object.assign(state, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const calLabel = {};
+  CALS.forEach(g => g[1].forEach(c => calLabel[c[0]] = c[1]));
+
+  // build caliber and zero selects
+  $("cal").innerHTML = CALS.map(g => '<optgroup label="' + esc(g[0]) + '">' + g[1].map(c => '<option value="' + c[0] + '">' + esc(c[1]) + "</option>").join("") + "</optgroup>").join("");
+  $("zero").innerHTML = ZEROS.map(z => '<option value="' + z + '">' + z + " 米</option>").join("");
+
+  const ammoOf = cal => AMMO.filter(a => a[0] === cal);
+  function fillAmmo() {
+    const list = ammoOf(state.cal);
+    $("ammo").innerHTML = list.map(a => '<option value="' + esc(a[1]) + '">' + esc(a[1]) + "（穿 " + a[5] + "）" + (a[6] ? " 曳光" : "") + "</option>").join("");
+    if (!list.some(a => a[1] === state.ammo)) { state.ammo = list[0][1]; state.v0 = null; }
+    $("ammo").value = state.ammo;
+  }
+  const current = () => AMMO.find(a => a[0] === state.cal && a[1] === state.ammo) || ammoOf(state.cal)[0];
+
+  function fmtDrop(cm) {
+    const r = Math.round(cm);
+    return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r);
+  }
+  function render() {
+    if (!calLabel[state.cal]) state.cal = "556x45NATO";
+    $("cal").value = state.cal;
+    fillAmmo();
+    if (!ZEROS.includes(+state.zero)) state.zero = 100;
+    $("zero").value = String(state.zero);
+    const a = current();
+    const v0 = state.v0 && state.v0 >= 50 ? state.v0 : a[2];
+    $("v0").value = v0;
+    $("v0reset").disabled = v0 === a[2];
+    document.querySelectorAll(".seg").forEach(s => s.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state[s.dataset.key]))));
+
+    const Z = +state.zero, h = +state.sh;
+    let dists = (state.range === "far" ? FAR : NEAR).slice();
+    if (!dists.includes(Z) && Z <= dists[dists.length - 1]) { dists.push(Z); dists.sort((x, y) => x - y); }
+    const res = table(v0, a[3], Z, h, dists);
+
+    $("summary").innerHTML =
+      '<span class="chip">' + esc(calLabel[a[0]]) + " <b>" + esc(a[1]) + "</b></span>" +
+      '<span class="chip">伤害 <b>' + a[4] + '</b></span><span class="chip">穿透 <b>' + a[5] + "</b></span>" +
+      '<span class="chip">弹道系数 <b>' + a[3] + "</b></span>";
+
+    $("tbody").innerHTML = res.rows.map(r => {
+      if (!r.ok) return '<tr><td class="d">' + r.d + '</td><td colspan="4" class="dim">超出射程</td></tr>';
+      const lv = Math.abs(r.dropCm) <= 10 ? 0 : Math.abs(r.dropCm) <= 30 ? 1 : 2;
+      const mil = Math.abs(r.mil) < 0.05 ? "0" : (r.mil > 0 ? "↑" : "↓") + Math.abs(r.mil).toFixed(1);
+      return '<tr' + (r.d === Z ? ' class="zero"' : "") + ">" +
+        '<td class="d">' + r.d + "</td>" +
+        '<td class="drop lv' + lv + '">' + fmtDrop(r.dropCm) + "</td>" +
+        "<td>" + mil + "</td>" +
+        '<td class="dim">' + Math.round(r.tofMs) + "</td>" +
+        '<td class="dim">' + Math.round(r.v) + "</td></tr>";
+    }).join("");
+    draw(res, Z, h, dists[dists.length - 1]);
+    save();
+  }
+
+  function draw(res, Z, h, maxD) {
+    const W = 420, H = 210, L = 40, R = 8, T = 14, B = 26;
+    const pts = res.pts.filter(p => p[0] <= maxD + 1).map(p => [p[0], (p[1] - h) * 100]);
+    let lo = Math.min(-15, ...pts.map(p => p[1])), hi = Math.max(15, ...pts.map(p => p[1]));
+    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+    const X = d => L + d / maxD * (W - L - R);
+    const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    const nice = v => { const e = Math.pow(10, Math.floor(Math.log10(v))); const m = v / e; return (m < 2 ? 1 : m < 5 ? 2 : 5) * e; };
+    let g = '<rect x="' + L + '" y="' + Y(10) + '" width="' + (W - L - R) + '" height="' + (Y(-10) - Y(10)) + '" fill="var(--good-soft)"/>';
+    const ys = nice((hi - lo) / 4);
+    for (let v = Math.ceil(lo / ys) * ys; v <= hi; v += ys) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--line)"/>';
+      g += '<text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">' + Math.round(v) + "</text>";
+    }
+    const xs = nice(maxD / 5);
+    for (let d = xs; d <= maxD; d += xs) g += '<text x="' + X(d) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">' + d + "</text>";
+    g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="var(--ink)" stroke-dasharray="4 4"/>';
+    g += '<path d="' + pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ") + '" fill="none" stroke="var(--brass)" stroke-width="2.5"/>';
+    if (Z <= maxD) g += '<circle cx="' + X(Z) + '" cy="' + Y(0) + '" r="5" fill="var(--good)" stroke="var(--panel)" stroke-width="2"/>';
+    g += '<text x="' + (W - R) + '" y="' + (T + 2) + '" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Noto Sans SC, sans-serif">厘米 / 米</text>';
+    $("svg").innerHTML = g;
+  }
+
+  $("cal").addEventListener("change", e => { state.cal = e.target.value; state.ammo = ""; state.v0 = null; render(); });
+  $("ammo").addEventListener("change", e => { state.ammo = e.target.value; state.v0 = null; render(); });
+  $("zero").addEventListener("change", e => { state.zero = +e.target.value; render(); });
+  $("v0").addEventListener("input", e => { const v = parseFloat(e.target.value); if (v >= 50 && v <= 2000) { state.v0 = v; render(); } });
+  $("v0").addEventListener("blur", () => render());
+  $("v0reset").addEventListener("click", () => { state.v0 = null; render(); });
+  document.querySelectorAll(".seg").forEach(s => s.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[s.dataset.key] = b.dataset.v; render(); }));
+  render();
+})();
+</script>
+</body>
+</html>
