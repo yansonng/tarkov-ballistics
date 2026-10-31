@@ -3,183 +3,104 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1b1d19">
+<meta name="theme-color" content="#14160f">
 <title>弹道下坠速查</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: one-thumb phone card. Controls on top, the range card (table) as the hero, trajectory strip and notes below. Same field-ledger family as the other tools. */
+/* Layout: one screen. Three pickers on top, the scope picture fills the rest. Page is dark on purpose (looking through glass); the scope image itself is fixed-colour. */
 :root {
-  --bg: #e9e6dc;
-  --panel: #f6f4ec;
-  --ink: #23251f;
-  --muted: #6b6c5f;
-  --line: #cfcabb;
-  --brass: #8d6a1f;
-  --brass-soft: #e7d9b4;
-  --good: #3d6b34;
-  --warn: #9a6a12;
-  --bad: #a3392b;
-  --good-soft: #dbe6d3;
-  --f-display: "Saira Condensed", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --bg: #14160f;
+  --panel: #1f221a;
+  --ink: #e8e5d8;
+  --muted: #9b9a88;
+  --line: #3a3d31;
+  --hold: #ff7a1a;
   --f-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, "Noto Sans SC", monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #1b1d19; --panel: #23261f; --ink: #e6e3d6; --muted: #9a9a88; --line: #3a3d33;
-    --brass: #d2a94f; --brass-soft: #3b3220; --good: #8cc47a; --warn: #e0b04f; --bad: #e47c69;
-    --good-soft: #243321; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #1b1d19; --panel: #23261f; --ink: #e6e3d6; --muted: #9a9a88; --line: #3a3d33;
-  --brass: #d2a94f; --brass-soft: #3b3220; --good: #8cc47a; --warn: #e0b04f; --bad: #e47c69;
-  --good-soft: #243321; color-scheme: dark;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+html { height: 100%; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
-  padding-left: max(14px, env(safe-area-inset-left, 0px));
-  padding-right: max(14px, env(safe-area-inset-right, 0px));
-  padding-block: 16px 40px;
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.5;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-block: 10px 24px;
 }
 [hidden] { display: none !important; }
-a { color: var(--brass); }
-.wrap { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.wrap { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .wrap > * { min-width: 0; }
-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
-h1 { font-family: var(--f-display); font-weight: 900; font-size: 28px; line-height: 1.1; margin: 0; letter-spacing: .02em; }
-.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--brass); }
-
-.controls { display: grid; gap: 10px; }
-.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
-.field { display: grid; gap: 3px; min-width: 0; }
-.field > label, .field > .lab { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.pickers { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .8fr); gap: 6px; }
+.pick { display: grid; gap: 2px; min-width: 0; }
+.pick label { font-size: 11px; color: var(--muted); letter-spacing: .06em; }
 select, input[type="number"] {
-  font: inherit; font-size: 16px; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
-  padding: 9px 10px; width: 100%; min-width: 0; border-radius: 0; -webkit-appearance: none; appearance: none;
+  font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  padding: 8px 22px 8px 8px; width: 100%; min-width: 0; border-radius: 0; -webkit-appearance: none; appearance: none; text-overflow: ellipsis;
 }
-select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
-input[type="number"] { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
-.vel { display: flex; min-width: 0; }
-.vel input { flex: 1; }
-.vel button { font: inherit; font-size: 13px; border: 1px solid var(--line); border-left: 0; background: var(--bg); color: var(--muted); padding: 0 10px; cursor: pointer; white-space: nowrap; }
-.vel button:disabled { opacity: .45; cursor: default; }
-select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--ink); }
-.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 8px 4px; border: 0; background: var(--panel); color: var(--ink); cursor: pointer; line-height: 1.25; }
-.seg button + button { border-left: 1px solid var(--ink); }
+select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 12px) 55%, calc(100% - 7px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+input[type="number"] { font-family: var(--f-mono); padding-right: 8px; }
+select:focus-visible, input:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--hold); outline-offset: 1px; }
+.scope { position: relative; width: 100%; max-width: 100%; aspect-ratio: 1 / 1; }
+.scope svg { display: block; width: 100%; height: 100%; }
+.cap { font-size: 12px; color: var(--muted); text-align: center; margin: 0; }
+.cap b { color: var(--hold); font-weight: 700; }
+details { border-top: 1px solid var(--line); padding-top: 8px; }
+summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+details[open] summary { margin-bottom: 10px; }
+.set { display: grid; gap: 12px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field > label, .field > .lab { font-size: 12px; color: var(--muted); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 7px 4px; border: 0; background: var(--panel); color: var(--ink); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-
-.summary { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--f-mono); font-size: 12px; }
-.chip { border: 1px solid var(--line); background: var(--panel); padding: 2px 8px; white-space: nowrap; }
-.chip b { font-weight: 600; color: var(--brass); }
-
-.card { background: var(--panel); border: 1px solid var(--line); }
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { padding: 9px 8px; text-align: right; white-space: nowrap; }
-th { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .03em; border-bottom: 2px solid var(--ink); line-height: 1.3; }
-th small { display: block; font-weight: 400; font-family: var(--f-mono); }
-td { font-family: var(--f-mono); font-size: 15px; border-bottom: 1px solid var(--line); }
-tr:last-child td { border-bottom: 0; }
-td.d { text-align: left; font-weight: 600; }
-th:first-child { text-align: left; }
-td.drop { font-weight: 600; }
-.lv0 { color: var(--good); }
-.lv1 { color: var(--warn); }
-.lv2 { color: var(--bad); }
-.dim { color: var(--muted); font-weight: 400; }
-tr.zero td { background: var(--good-soft); }
-tr.zero td.d::after { content: " 归零"; font-family: var(--f-body); font-size: 11px; font-weight: 700; color: var(--good); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); padding: 8px 10px; border-top: 1px solid var(--line); }
-.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 5px; vertical-align: 1px; background: currentColor; }
-
-.chart { padding: 10px 8px 4px; }
-.chart h2, .notes h2 { font-size: 15px; font-weight: 900; margin: 0 2px 6px; letter-spacing: .04em; }
-.chart svg { display: block; width: 100%; height: auto; }
-
-.notes { display: grid; gap: 4px; }
-.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 14px; }
-footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
-@media (min-width: 560px) { h1 { font-size: 34px; } td { font-size: 16px; } }
+.btn { font: inherit; font-size: 13px; color: var(--muted); background: transparent; border: 1px solid var(--line); padding: 5px 10px; cursor: pointer; justify-self: start; }
+footer { font-size: 11px; color: var(--muted); line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>弹道下坠速查</h1>
-    <span class="eyebrow">逃离塔科夫 · 弹道</span>
-  </header>
+  <div class="pickers">
+    <div class="pick"><label for="gun">枪</label><select id="gun"></select></div>
+    <div class="pick"><label for="ammo">弹药</label><select id="ammo"></select></div>
+    <div class="pick"><label for="zero">归零</label><select id="zero"></select></div>
+  </div>
 
-  <section class="controls" aria-label="设置">
-    <div class="row">
-      <div class="field"><label for="cal">口径</label><select id="cal"></select></div>
-      <div class="field"><label for="ammo">弹药</label><select id="ammo"></select></div>
-    </div>
-    <div class="row">
-      <div class="field"><label for="zero">归零距离</label><select id="zero"></select></div>
+  <div class="scope"><svg id="svg" viewBox="0 0 400 400" role="img" aria-label="瞄准镜分划与抬枪线"></svg></div>
+  <p class="cap" id="cap"></p>
+
+  <details>
+    <summary>设置</summary>
+    <div class="set">
       <div class="field">
-        <label for="v0">初速（米/秒）</label>
-        <div class="vel"><input id="v0" type="number" inputmode="numeric" min="50" max="2000" step="5"><button type="button" id="v0reset" title="恢复弹药默认初速">默认</button></div>
+        <label for="mult">刻度倍率（Tarkov 密位）</label>
+        <input id="mult" type="number" inputmode="decimal" min="0.2" max="5" step="0.01">
+        <p class="hint">游戏里的分划不是按真实比例画的，每个瞄具都不一样。倍率 = 游戏里 1 格刻度等于多少真实密位。1.00 就是真实密位。Tarkov Gunsmith 也是用这种倍率来修正。</p>
       </div>
-    </div>
-    <div class="row">
-      <div class="field">
-        <span class="lab">瞄具高度</span>
-        <div class="seg" role="group" aria-label="瞄具高度" data-key="sh">
-          <button type="button" data-v="0.04">低</button>
-          <button type="button" data-v="0.06">中</button>
-          <button type="button" data-v="0.08">高</button>
+      <div class="row">
+        <div class="field">
+          <span class="lab">瞄具高度</span>
+          <div class="seg" role="group" aria-label="瞄具高度" data-key="sh">
+            <button type="button" data-v="0.04">低</button>
+            <button type="button" data-v="0.0686">中</button>
+            <button type="button" data-v="0.09">高</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="vel">初速修正 %</label>
+          <input id="vel" type="number" inputmode="decimal" step="0.1">
         </div>
       </div>
-      <div class="field">
-        <span class="lab">距离表</span>
-        <div class="seg" role="group" aria-label="距离表" data-key="range">
-          <button type="button" data-v="near">0–300</button>
-          <button type="button" data-v="far">0–800</button>
-        </div>
-      </div>
+      <p class="hint">初速修正默认是这把枪出厂配置的数值（枪管、枪口装置）。换了枪管就把改装界面里的数值填进来。</p>
+      <button type="button" class="btn" id="reset">恢复默认设置</button>
     </div>
-    <div class="summary" id="summary"></div>
-  </section>
+  </details>
 
-  <section class="card" aria-label="弹道表">
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">距离<small>米</small></th>
-          <th scope="col">下坠<small>厘米</small></th>
-          <th scope="col">抬枪<small>密位</small></th>
-          <th scope="col">飞行<small>毫秒</small></th>
-          <th scope="col">存速<small>米/秒</small></th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div class="legend"><span class="lv0">±10 厘米内，直接瞄</span><span class="lv1">10–30 厘米，瞄高一点</span><span class="lv2">超过 30 厘米，要抬枪</span></div>
-  </section>
-
-  <section class="card chart" aria-label="弹道曲线">
-    <h2>弹道曲线 <span class="dim" style="font-size:12px;font-weight:400">相对准星，阴影为 ±10 厘米</span></h2>
-    <svg id="svg" viewBox="0 0 420 210" role="img" aria-label="相对准星的弹道高度"></svg>
-  </section>
-
-  <section class="notes" aria-labelledby="h-how">
-    <h2 id="h-how">怎么看</h2>
-    <ul>
-      <li><b>下坠</b>：瞄准目标中心时，子弹落点比准星低（负数）或高（正数）多少厘米。</li>
-      <li><b>抬枪</b>：要打中，准星需要往上抬多少密位（mil）。1 密位在 100 米处约 10 厘米，在 300 米处约 30 厘米。带密位分划的瞄具可以直接对着刻度用。</li>
-      <li><b>初速</b>：默认是弹药的标准初速。枪管长短会改变初速，改装界面里能看到这把枪的实际初速，填进来会更准。</li>
-      <li><b>瞄具高度</b>：准星比枪管高多少。机瞄和低位红点选「低」，一般瞄具选「中」，高位或侧装选「高」。只影响 100 米以内。</li>
-      <li>归零距离要和游戏里瞄具上设置的一致（默认键位 Page Up / Page Down 调整）。</li>
-    </ul>
-  </section>
-
-  <footer>按游戏的弹道模型计算（G1 阻力表 + 弹药弹道系数，每 0.01 秒模拟一次，与 Tarkov Gunsmith 相同）。默认按水平射击计算。弹药数据来自 tarkov.dev，2026 年 10 月 31 日 快照，版本更新后数值可能变化。</footer>
+  <footer>算法与 Tarkov Gunsmith 相同：G1 阻力表、每 0.01 秒模拟一次。游戏的归零角度是按枪的默认弹药算的，换了弹药，归零距离上也会有偏差，图上已经算进去。只适用于水平射击。弹药和枪械数据来自 tarkov.dev，2026 年 10 月 31 日 快照。</footer>
 </div>
 
 <script>
@@ -241,109 +162,146 @@ if (typeof module !== "undefined") module.exports = { cd, fly, at, zeroAngle, ta
 <script>
 (function () {
   "use strict";
-  const AMMO = [["1143x23ACP",".45 AP",299,0.197,66,38,0],["1143x23ACP",".45 FMJ",340,0.131,72,25,0],["1143x23ACP",".45LM",290,0.161,76,19,1],["1143x23ACP",".45 HS",274,0.114,100,13,0],["1143x23ACP",".45 RIP",293,0.131,130,3,0],["127x33","FMJ B",635,0.131,113,57,0],["127x33","FMJ",440,0.131,85,40,0],["127x33","铜弹",460,0.163,94,33,0],["127x33","Hawk JSP",465,0.166,122,26,0],["127x33","JHP",440,0.122,147,12,0],["127x55","PS12B",570,0.151,102,46,0],["127x55","PS12",300,0.426,115,28,0],["127x55","PS12A",870,0.091,165,10,0],["127x99","M903",1220,0.347,160,115,0],["127x99","M33",887,0.622,190,56,0],["127x99","M21",867,0.614,220,45,1],["127x99","HP",880,0.275,260,34,0],["12g","AP-20",510,0.383,164,37,0],["12g",".50 BMG",410,0.582,197,26,0],["12g","食人鱼",310,0.257,25,24,0],["12g","P-6u 12c",430,0.057,150,20,0],["12g","FTX",480,0.188,183,20,0],["12g","P-3 12c",410,0.116,140,17,0],["12g","2-Sabot",415,0.074,85,17,0],["12g","12/70独头弹",370,0.121,167,15,0],["12g","CSP",442,0.099,206,14,0],["12g","Grizzly",390,0.222,190,12,0],["12g","SF",594,0.2,220,5,0],["12g","12/70 RIP",410,0.055,265,2,0],["20g","TSS AP",482,0.032,155,30,0],["20g","DGS",476,0.032,143,25,0],["20g","P-6u 20c",445,0.144,135,17,0],["20g","20/70独头弹",415,0.121,154,16,0],["20g","P-3 20c",425,0.156,120,14,0],["20g","Dev.",405,0.032,198,5,0],["23x75","破障",420,0.287,192,39,0],["366TKM","366 AP",602,0.373,90,42,0],["366TKM","EKO",770,0.135,73,30,0],["366TKM","FMJ",580,0.202,98,23,0],["366TKM","Geksa",550,0.241,110,14,0],["46x30","AP SX",680,0.14,35,53,0],["46x30","FMJ SX",620,0.228,43,40,0],["46x30","JSP SX",579,0.175,46,32,0],["46x30","Subsonic SX",290,0.437,52,23,0],["46x30","Action SX",690,0.175,65,18,0],["545x39","7N39",905,0.283,37,62,0],["545x39","BS",830,0.254,45,54,0],["545x39","BP",890,0.252,48,45,0],["545x39","7N40",915,0.252,55,42,0],["545x39","BT",880,0.209,54,37,1],["545x39","PP",886,0.254,51,34,0],["545x39","PS",890,0.235,56,28,0],["545x39","FMJ",884,0.266,55,24,0],["545x39","T",883,0.223,59,20,1],["545x39","US",303,0.355,65,17,0],["545x39","SP",873,0.246,67,15,0],["545x39","PRS",866,0.266,70,13,0],["545x39","HP",884,0.246,76,9,0],["556x45NATO","SSA AP",1013,0.196,38,57,0],["556x45NATO","M995",1013,0.196,42,53,0],["556x45NATO","M855A1",945,0.233,49,44,0],["556x45NATO","M856A1",940,0.269,52,38,1],["556x45NATO","SOST",902,0.269,53,33,0],["556x45NATO","M855",922,0.233,54,31,0],["556x45NATO","FMJ",957,0.252,57,23,0],["556x45NATO","M856",874,0.241,60,18,1],["556x45NATO","Mk255 Mod0",936,0.335,72,11,0],["556x45NATO","HP",947,0.209,79,7,0],["556x45NATO","WG",936,0.335,88,3,0],["57x28","SS190",715,0.233,49,37,0],["57x28","L191",715,0.233,53,33,1],["57x28","SB193",299,0.233,59,27,0],["57x28","SS197SR",594,0.233,62,25,0],["57x28","SS198LF",792,0.233,70,17,0],["57x28","R37.X",724,0.075,81,11,0],["57x28","R37.F",729,0.075,98,8,0],["58x42","DVC12",872,0.233,46,52,0],["58x42","DVX12",850,0.233,48,47,1],["58x42","DBP191",840,0.233,53,39,0],["58x42","DBX95",910,0.233,57,33,1],["68x51","Hybrid",914,0.388,72,47,0],["68x51","FMJ",899,0.405,80,36,0],["762x25TT","TT 995",940,0.23,32,37,0],["762x25TT","TT 855A1",900,0.17,34,31,0],["762x25TT","TT 856A1",900,0.18,36,27,1],["762x25TT","Pst",430,0.126,50,25,0],["762x25TT","PT",415,0.124,55,18,1],["762x25TT","P gl",430,0.127,58,14,0],["762x25TT","AKBS",425,0.127,58,12,0],["762x25TT","FMJ43",427,0.055,60,11,0],["762x25TT","LRN",375,0.146,64,8,0],["762x25TT","LRNPC",385,0.119,66,7,0],["762x35","AP",635,0.334,51,48,0],["762x35","CBJ",725,0.334,58,43,0],["762x35","M62",442,0.334,54,36,1],["762x35","BPZ",605,0.334,60,30,0],["762x35","V-Max",723,0.334,72,20,0],["762x35","Whisper",853,0.334,90,14,0],["762x39","MAI AP",875,0.28,53,58,0],["762x39","BP",730,0.28,58,47,0],["762x39","PP",732,0.28,59,41,0],["762x39","PS",717,0.28,61,35,0],["762x39","T-45M1",720,0.227,65,30,1],["762x39","US",301,0.379,56,29,0],["762x39","FMJ",775,0.28,63,26,0],["762x39","SP",772,0.28,68,20,0],["762x39","HP",754,0.278,80,15,0],["762x51","M993",930,0.43,70,65,0],["762x51","M61",833,0.419,73,60,0],["762x51","M80A1",929,0.5,75,55,0],["762x51","M80",820,0.398,80,43,0],["762x51","M62",820,0.388,82,42,1],["762x51","BPZ FMJ",840,0.41,83,37,0],["762x51","TCW SP",800,0.446,85,30,0],["762x51","Ultra Nosler",800,0.475,105,15,0],["762x54R","7N37",785,0.425,72,70,0],["762x54R","SNB",875,0.342,75,62,0],["762x54R","7BT1",875,0.331,78,55,1],["762x54R","7N1",875,0.342,84,45,0],["762x54R","LPS",865,0.334,81,42,0],["762x54R","T46M",800,0.289,82,41,1],["762x54R","FMJ",760,0.334,84,36,0],["762x54R","SP BT",703,0.334,92,31,0],["762x54R","HP BT",807,0.334,102,26,0],["784x49","ME",838,0.346,80,42,0],["784x49","LOKT",838,0.346,96,24,0],["86x70","AP",849,0.477,115,79,0],["86x70","FMJ",900,0.48,122,47,0],["86x70","UCW",849,0.48,142,32,0],["86x70","TAC-X",880,0.476,196,18,0],["93x64","7N33",790,0.38,108,56,0],["93x64","FMJ",793,0.27,115,44,0],["93x64","SP",697,0.414,129,37,0],["9x18PM","PBM",519,0.061,40,28,0],["9x18PM","PstM",420,0.096,58,24,0],["9x18PM","BZhT",325,0.067,53,18,0],["9x18PM","RG028",330,0.106,65,13,0],["9x18PM","Pst",298,0.097,50,12,0],["9x18PM","PPT",301,0.104,59,8,1],["9x18PM","PPe",297,0.092,61,7,0],["9x18PM","PRS",302,0.101,58,6,0],["9x18PM","PS PPO",330,0.104,55,6,0],["9x18PM","P",302,0.101,50,5,0],["9x18PM","PSO",315,0.099,54,5,0],["9x18PM","PSV",280,0.124,69,3,0],["9x18PM","SP7",420,0.069,77,2,0],["9x18PM","SP8",250,0.083,67,1,0],["9x19PARA","7N31",560,0.051,44,39,0],["9x19PARA","AP 6.3",392,0.121,52,30,0],["9x19PARA","Pst",457,0.068,54,20,0],["9x19PARA","M882",385,0.068,56,18,0],["9x19PARA","绿色曳光",365,0.105,58,14,1],["9x19PARA","PSO",340,0.131,59,10,0],["9x19PARA","Luger CCI",420,0.131,70,10,0],["9x19PARA","QuakeMaker",290,0.15,85,8,0],["9x19PARA","RIP",381,0.075,102,2,0],["9x21","7N42",400,0.156,49,38,0],["9x21","SP13",410,0.084,52,32,1],["9x21","7U4",300,0.117,53,27,0],["9x21","SP10",410,0.084,59,22,0],["9x21","SP11",413,0.138,65,18,0],["9x21","SP12",415,0.117,80,15,0],["9x33R","FMJ",385,0.163,70,35,0],["9x33R","JHP",425,0.155,88,24,0],["9x33R","HP",481,0.124,99,18,0],["9x33R","SP",455,0.189,108,12,0],["9x39","BP",295,0.395,58,54,0],["9x39","SP-6",305,0.414,60,48,0],["9x39","PAB-9",320,0.395,62,43,0],["9x39","SPP",310,0.189,68,35,0],["9x39","SP-5",290,0.353,71,28,0],["9x39","FMJ",330,0.343,75,17,0]];
-  const CALS = [
-    ["突击步枪", [["545x39", "5.45×39"], ["556x45NATO", "5.56×45"], ["762x39", "7.62×39"], ["762x35", ".300 BLK"], ["58x42", "5.8×42"], ["68x51", "6.8×51"], ["366TKM", ".366 TKM"], ["9x39", "9×39"]]],
-    ["精确射手 / 狙击", [["762x51", "7.62×51"], ["762x54R", "7.62×54R"], ["784x49", ".308 ME"], ["86x70", ".338 拉普"], ["93x64", "9.3×64"], ["127x55", "12.7×55"], ["127x99", ".50 BMG"]]],
-    ["手枪 / 冲锋枪", [["9x19PARA", "9×19"], ["9x18PM", "9×18 PM"], ["9x21", "9×21"], ["762x25TT", "7.62×25 TT"], ["1143x23ACP", ".45 ACP"], ["46x30", "4.6×30"], ["57x28", "5.7×28"], ["9x33R", ".357 马格南"], ["127x33", ".50 AE"]]],
-    ["霰弹枪（独头弹）", [["12g", "12 号"], ["20g", "20 号"], ["23x75", "23×75"]]]
-  ];
-  const ZEROS = [25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600, 700, 800, 1000];
-  const NEAR = [10, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300];
-  const FAR = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800];
-  const KEY = "tkv-drop-v1";
+  const A = [["556x45NATO","M855",922,0.233,54,31,0],["556x45NATO","M855A1",945,0.233,49,44,0],["762x54R","SNB",875,0.342,75,62,0],["762x39","PS",717,0.28,61,35,0],["9x19PARA","Pst",457,0.068,54,20,0],["545x39","BP",890,0.252,48,45,0],["545x39","BS",830,0.254,45,54,0],["545x39","BT",880,0.209,54,37,1],["545x39","FMJ",884,0.266,55,24,0],["545x39","HP",884,0.246,76,9,0],["545x39","PP",886,0.254,51,34,0],["545x39","PRS",866,0.266,70,13,0],["545x39","PS",890,0.235,56,28,0],["545x39","SP",873,0.246,67,15,0],["545x39","T",883,0.223,59,20,1],["545x39","US",303,0.355,65,17,0],["762x25TT","AKBS",425,0.127,58,12,0],["762x25TT","FMJ43",427,0.055,60,11,0],["762x25TT","LRN",375,0.146,64,8,0],["762x25TT","LRNPC",385,0.119,66,7,0],["762x25TT","P gl",430,0.127,58,14,0],["762x25TT","Pst",430,0.126,50,25,0],["762x25TT","PT",415,0.124,55,18,1],["9x18PM","BZhT",325,0.067,53,18,0],["9x18PM","P",302,0.101,50,5,0],["9x18PM","PBM",519,0.061,40,28,0],["9x18PM","PstM",420,0.096,58,24,0],["9x18PM","PPe",297,0.092,61,7,0],["9x18PM","PPT",301,0.104,59,8,1],["9x18PM","PRS",302,0.101,58,6,0],["9x18PM","PS PPO",330,0.104,55,6,0],["9x18PM","PSO",315,0.099,54,5,0],["9x18PM","Pst",298,0.097,50,12,0],["9x18PM","PSV",280,0.124,69,3,0],["9x18PM","RG028",330,0.106,65,13,0],["9x18PM","SP7",420,0.069,77,2,0],["9x18PM","SP8",250,0.083,67,1,0],["9x39","SP-5",290,0.353,71,28,0],["9x39","SP-6",305,0.414,60,48,0],["12g","12/70独头弹",370,0.121,167,15,0],["9x19PARA","PSO",340,0.131,59,10,0],["762x54R","LPS",865,0.334,81,42,0],["762x51","M80",820,0.398,80,43,0],["762x39","BP",730,0.28,58,47,0],["762x39","T-45M1",720,0.227,65,30,1],["762x39","US",301,0.379,56,29,0],["762x39","HP",754,0.278,80,15,0],["366TKM","FMJ",580,0.202,98,23,0],["366TKM","EKO",770,0.135,73,30,0],["366TKM","Geksa",550,0.241,110,14,0],["556x45NATO","M856",874,0.241,60,18,1],["556x45NATO","M856A1",940,0.269,52,38,1],["556x45NATO","M995",1013,0.196,42,53,0],["556x45NATO","Mk255 Mod0",936,0.335,72,11,0],["556x45NATO","FMJ",957,0.252,57,23,0],["556x45NATO","HP",947,0.209,79,7,0],["762x54R","7N1",875,0.342,84,45,0],["9x21","SP10",410,0.084,59,22,0],["9x21","SP11",413,0.138,65,18,0],["9x21","SP12",415,0.117,80,15,0],["9x21","SP13",410,0.084,52,32,1],["9x19PARA","Luger CCI",420,0.131,70,10,0],["762x51","M61",833,0.419,73,60,0],["762x51","M62",820,0.388,82,42,1],["46x30","FMJ SX",620,0.228,43,40,0],["46x30","Action SX",690,0.175,65,18,0],["46x30","AP SX",680,0.14,35,53,0],["46x30","Subsonic SX",290,0.437,52,23,0],["9x19PARA","RIP",381,0.075,102,2,0],["12g","12/70 RIP",410,0.055,265,2,0],["556x45NATO","WG",936,0.335,88,3,0],["545x39","7N39",905,0.283,37,62,0],["9x39","SPP",310,0.189,68,35,0],["9x39","BP",295,0.395,58,54,0],["9x19PARA","绿色曳光",365,0.105,58,14,1],["9x19PARA","AP 6.3",392,0.121,52,30,0],["127x55","PS12",300,0.426,115,28,0],["127x55","PS12A",870,0.091,165,10,0],["127x55","PS12B",570,0.151,102,46,0],["57x28","SS190",715,0.233,49,37,0],["57x28","L191",715,0.233,53,33,1],["57x28","SB193",299,0.233,59,27,0],["57x28","SS198LF",792,0.233,70,17,0],["57x28","SS197SR",594,0.233,62,25,0],["57x28","R37.F",729,0.075,98,8,0],["57x28","R37.X",724,0.075,81,11,0],["12g","Grizzly",390,0.222,190,12,0],["12g","P-3 12c",410,0.116,140,17,0],["12g","P-6u 12c",430,0.057,150,20,0],["12g","AP-20",510,0.383,164,37,0],["12g","CSP",442,0.099,206,14,0],["12g",".50 BMG",410,0.582,197,26,0],["12g","SF",594,0.2,220,5,0],["12g","2-Sabot",415,0.074,85,17,0],["12g","FTX",480,0.188,183,20,0],["20g","20/70独头弹",415,0.121,154,16,0],["20g","P-6u 20c",445,0.144,135,17,0],["20g","P-3 20c",425,0.156,120,14,0],["20g","Dev.",405,0.032,198,5,0],["762x54R","T46M",800,0.289,82,41,1],["762x54R","7BT1",875,0.331,78,55,1],["762x54R","7N37",785,0.425,72,70,0],["762x51","BPZ FMJ",840,0.41,83,37,0],["762x51","TCW SP",800,0.446,85,30,0],["762x51","Ultra Nosler",800,0.475,105,15,0],["1143x23ACP",".45 FMJ",340,0.131,72,25,0],["23x75","破障",420,0.287,192,39,0],["1143x23ACP",".45 RIP",293,0.131,130,3,0],["762x51","M993",930,0.43,70,65,0],["1143x23ACP",".45 AP",299,0.197,66,38,0],["1143x23ACP",".45LM",290,0.161,76,19,1],["9x19PARA","7N31",560,0.051,44,39,0],["9x19PARA","QuakeMaker",290,0.15,85,8,0],["1143x23ACP",".45 HS",274,0.114,100,13,0],["366TKM","366 AP",602,0.373,90,42,0],["762x35","BPZ",605,0.334,60,30,0],["86x70","FMJ",900,0.48,122,47,0],["86x70","AP",849,0.477,115,79,0],["86x70","TAC-X",880,0.476,196,18,0],["86x70","UCW",849,0.48,142,32,0],["762x35","AP",635,0.334,51,48,0],["556x45NATO","SOST",902,0.269,53,33,0],["556x45NATO","SSA AP",1013,0.196,38,57,0],["762x39","MAI AP",875,0.28,53,58,0],["545x39","7N40",915,0.252,55,42,0],["9x39","PAB-9",320,0.395,62,43,0],["762x35","V-Max",723,0.334,72,20,0],["762x35","Whisper",853,0.334,90,14,0],["762x35","M62",442,0.334,54,36,1],["9x33R","FMJ",385,0.163,70,35,0],["9x33R","HP",481,0.124,99,18,0],["9x33R","JHP",425,0.155,88,24,0],["9x33R","SP",455,0.189,108,12,0],["46x30","JSP SX",579,0.175,46,32,0],["762x39","PP",732,0.28,59,41,0],["762x39","FMJ",775,0.28,63,26,0],["762x39","SP",772,0.28,68,20,0],["9x19PARA","M882",385,0.068,56,18,0],["762x35","CBJ",725,0.334,58,43,0],["12g","食人鱼",310,0.257,25,24,0],["762x54R","FMJ",760,0.334,84,36,0],["762x54R","SP BT",703,0.334,92,31,0],["762x54R","HP BT",807,0.334,102,26,0],["68x51","Hybrid",914,0.388,72,47,0],["68x51","FMJ",899,0.405,80,36,0],["9x21","7N42",400,0.156,49,38,0],["9x21","7U4",300,0.117,53,27,0],["9x39","FMJ",330,0.343,75,17,0],["20g","TSS AP",482,0.032,155,30,0],["20g","DGS",476,0.032,143,25,0],["127x33","FMJ",440,0.131,85,40,0],["127x33","JHP",440,0.122,147,12,0],["127x33","铜弹",460,0.163,94,33,0],["127x33","Hawk JSP",465,0.166,122,26,0],["762x51","M80A1",929,0.5,75,55,0],["784x49","ME",838,0.346,80,42,0],["784x49","LOKT",838,0.346,96,24,0],["127x99","HP",880,0.275,260,34,0],["127x99","M21",867,0.614,220,45,1],["127x99","M33",887,0.622,190,56,0],["127x99","M903",1220,0.347,160,115,0],["93x64","SP",697,0.414,129,37,0],["93x64","FMJ",793,0.27,115,44,0],["93x64","7N33",790,0.38,108,56,0],["762x25TT","TT 855A1",900,0.17,34,31,0],["762x25TT","TT 856A1",900,0.18,36,27,1],["762x25TT","TT 995",940,0.23,32,37,0],["58x42","DBP191",840,0.233,53,39,0],["58x42","DBX95",910,0.233,57,33,1],["58x42","DVC12",872,0.233,46,52,0],["58x42","DVX12",850,0.233,48,47,1],["127x33","FMJ B",635,0.131,113,57,0]];   // [caliber, name, v0, bc, damage, pen, tracer]
+  const W = [["M4A1","556x45NATO",0,0,"突击步枪"],["PM","9x18PM",24,-4.54,"手枪"],["SV-98","762x54R",41,2.6,"狙击步枪"],["AK-74N","545x39",12,1.8,"突击步枪"],["P226R","9x19PARA",137,-2,"手枪"],["PB","9x18PM",24,-12.12,"手枪"],["TT","762x25TT",20,-2.32,"手枪"],["SKS","762x39",3,2,"突击卡宾枪"],["MP-443 \"乌鸦\"","9x19PARA",4,-1.74,"手枪"],["VSS","9x39",37,1.1,"精确射手步枪"],["PM (t)","9x18PM",24,-4.54,"手枪"],["AS VAL","9x39",37,1.1,"突击卡宾枪"],["PP-91 雪松","9x18PM",24,-6.06,"冲锋枪"],["AKS-74U","545x39",12,-17.9,"突击步枪"],["PP-91-01 雪松-B","9x18PM",24,-4.5,"冲锋枪"],["PP-9 楔子","9x18PM",24,-6.06,"冲锋枪"],["AKS-74UN","545x39",12,-17.9,"突击步枪"],["AKS-74UB","545x39",12,-17.4,"突击步枪"],["OP-SKS","762x39",135,2,"突击卡宾枪"],["DVL-10","762x51",42,16.81,"狙击步枪"],["MPX","9x19PARA",137,0,"冲锋枪"],["MP5","9x19PARA",137,13,"冲锋枪"],["PP-19-01","9x19PARA",4,-17.9,"冲锋枪"],["AKM","762x39",3,1.8,"突击步枪"],["VPO-136 野猪-KM","762x39",135,1.8,"突击步枪"],["VPO-209","366TKM",47,1.8,"突击步枪"],["SR-1MP","9x21",58,0.1,"手枪"],["Saiga-9","9x19PARA",4,-17.9,"冲锋枪"],["AKMS","762x39",3,1.8,"突击步枪"],["AKMN","762x39",3,1.8,"突击步枪"],["APS","9x18PM",24,-4.54,"手枪"],["RSASS","762x51",42,3,"精确射手步枪"],["GLOCK17","9x19PARA",137,-2,"手枪"],["M1A","762x51",42,-1,"精确射手步枪"],["AKS-74N","545x39",12,1.8,"突击步枪"],["AKMSN","762x39",3,1.8,"突击步枪"],["APB","9x18PM",24,-3.74,"手枪"],["AK-74M","545x39",12,1.8,"突击步枪"],["AK-101","556x45NATO",54,1.8,"突击步枪"],["AK-102","556x45NATO",54,1.8,"突击步枪"],["AK-103","762x39",3,1.8,"突击步枪"],["AK-104","762x39",3,1.8,"突击步枪"],["AK-105","545x39",12,1.8,"突击步枪"],["莫辛狙击型","762x54R",41,3.81,"狙击步枪"],["SA-58","762x51",102,-31,"突击步枪"],["GLOCK18C","9x19PARA",137,-4,"手枪"],["TT","762x25TT",20,-2.32,"手枪"],["MP7A1","46x30",64,13,"冲锋枪"],["HK 416A5","556x45NATO",50,0,"突击步枪"],["MP7A2","46x30",64,13,"冲锋枪"],["RPK-16","545x39",12,-6.2,"机枪"],["AK-74","545x39",12,1.8,"突击步枪"],["AKS-74","545x39",12,1.8,"突击步枪"],["莫辛步兵型","762x54R",41,2.81,"狙击步枪"],["M700","762x51",102,11.81,"狙击步枪"],["ADAR 2-15","556x45NATO",54,2,"突击步枪"],["SVDS","762x54R",56,0,"精确射手步枪"],["MDR","556x45NATO",54,-4,"突击步枪"],["Hunter","762x51",102,1.8,"突击卡宾枪"],["M9A3","9x19PARA",137,-2.4,"手枪"],["ASh-12","127x55",76,1.1,"突击步枪"],["P90","57x28",83,1.5,"冲锋枪"],["MP5K-N","9x19PARA",137,13,"冲锋枪"],["FN 5-7","57x28",83,0,"手枪"],["TX-15 DML","556x45NATO",54,3.5,"突击步枪"],["FN 5-7 FDE","57x28",83,0.6,"手枪"],["MDR","762x51",102,-2,"突击步枪"],["VPO-215 雪貂","366TKM",48,11.9,"狙击步枪"],["MP9-N","9x19PARA",137,13,"冲锋枪"],["T-5000M","762x51",42,14.81,"狙击步枪"],["SR-25","762x51",102,-2,"精确射手步枪"],["MP9","9x19PARA",137,13,"冲锋枪"],["M1911A1","1143x23ACP",105,-1,"手枪"],["KS-23M","23x75",106,2.4,"霰弹枪"],["PPSh41","762x25TT",17,-19.9,"冲锋枪"],["RFB","762x51",102,0,"精确射手步枪"],["M45A1","1143x23ACP",105,-1,"手枪"],["Vector .45","1143x23ACP",105,11,"冲锋枪"],["MCX .300 BLK","762x35",115,0,"突击步枪"],["Mk-18 雷霆之锤","86x70",116,-2,"精确射手步枪"],["UMP 45","1143x23ACP",105,-2,"冲锋枪"],["Vector 9x19","9x19PARA",137,11,"冲锋枪"],["PL-15","9x19PARA",4,-2,"手枪"],["STM-9","9x19PARA",4,0,"冲锋枪"],["Mk47","762x39",135,-17,"突击步枪"],["Mk 17","762x51",102,-2,"突击步枪"],["G28","762x51",102,0,"精确射手步枪"],["Mk 17","762x51",102,0,"突击步枪"],["Mk 16","556x45NATO",50,5,"突击步枪"],["Mk 16","556x45NATO",54,0,"突击步枪"],["USP .45","1143x23ACP",105,-2,"手枪"],["CR 50DS","9x33R",129,20,"Revolver"],["MP-18","762x54R",140,0,"霰弹枪"],["G36","556x45NATO",0,0,"突击步枪"],["CR 200DS","9x19PARA",4,0,"Revolver"],["AXMC","86x70",116,6.81,"狙击步枪"],["RD-704","762x39",135,1.8,"突击步枪"],["AK-545","545x39",8,1.8,"突击步枪"],["AK-545短","545x39",8,1.8,"突击步枪"],["SR-2M","9x21",58,13,"冲锋枪"],["AUG A1","556x45NATO",54,0,"突击步枪"],["Glock 19X","9x19PARA",137,-2,"手枪"],["AUG A3","556x45NATO",54,0,"突击步枪"],["RSH-12","127x55",76,20,"Revolver"],["AVT-40","762x54R",41,0,"突击卡宾枪"],["SVT-40","762x54R",41,0,"突击卡宾枪"],["9A-91","9x39",37,0,"突击卡宾枪"],["VSK-94","9x39",37,1.1,"突击卡宾枪"],["PKM","762x54R",41,12.8,"机枪"],["AK-12","545x39",12,1.8,"突击步枪"],["PKP","762x54R",41,12.8,"机枪"],["RPD","762x39",3,1.8,"机枪"],["SR-3M","9x39",37,0,"突击卡宾枪"],["RPDN","762x39",3,1.8,"机枪"],["SPEAR 6.8","68x51",144,-2.3,"突击步枪"],["Mk 43 Mod 1","762x51",42,1.8,"机枪"],["M60E6","762x51",42,1.8,"机枪"],["M60E6","762x51",42,2.8,"机枪"],["UZI PRO 冲锋手枪","9x19PARA",137,10,"冲锋枪"],["UZI PRO 冲锋枪","9x19PARA",137,12,"冲锋枪"],["沙漠之鹰Mk XIX","127x33",150,0,"手枪"],["UZI","9x19PARA",137,14,"冲锋枪"],["沙漠之鹰L6","127x33",150,0,"手枪"],["沙漠之鹰L6","127x33",150,0,"手枪"],["沙漠之鹰L5","127x33",150,0,"手枪"],["沙漠之鹰L5","9x33R",129,0,"手枪"],["AUG A3","556x45NATO",54,-5,"突击步枪"],["TRG M10","86x70",116,6.89,"狙击步枪"],["迅猛龙","762x35",115,1.8,"突击步枪"],["X-17","762x51",102,-2,"突击步枪"],["MXLR","784x49",155,1.01,"狙击步枪"],["AK-50","127x99",157,0,"精确射手步枪"],["AS VAL MOD.4","9x39",37,1.1,"突击卡宾枪"],["AK-308","762x51",42,1.8,"突击步枪"],["Model 1","556x45NATO",0,2,"突击步枪"],["M16A1","556x45NATO",0,5,"突击步枪"],["M16A2","556x45NATO",0,5,"突击步枪"],["TKPD","93x64",161,-2,"精确射手步枪"],["NL545 DI","545x39",8,-4.6,"突击步枪"],["NL545 GP","545x39",8,-4.2,"突击步枪"],["SR-25","762x51",102,0,"精确射手步枪"],["QBZ-191","58x42",167,-11,"突击步枪"],["HK 416A5","556x45NATO",50,0,"突击步枪"],["20 式","556x45NATO",50,-3.68,"突击步枪"],["P90 灾厄","57x28",83,1.5,"冲锋枪"]];   // [name, caliber, defaultAmmoIndex, velocity %, category]
+  const ZEROS = [25, 50, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 1000];
+  const DISTS = [50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000];
+  const CAT_ORDER = ["突击步枪", "突击卡宾枪", "精确射手步枪", "狙击步枪", "机枪", "冲锋枪", "手枪", "左轮手枪", "霰弹枪"];
+  const KEY = "tkv-scope-v1";
   const $ = id => document.getElementById(id);
-  const state = { cal: "556x45NATO", ammo: "M855A1", zero: 100, v0: null, sh: "0.06", range: "near" };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // tidy gun list: translate category, drop exact duplicates, number repeated names
+  const seen = new Set(), count = {};
+  const GUNS = [];
+  W.forEach(w => {
+    const cat = w[4] === "Revolver" ? "左轮手枪" : w[4];
+    const k = w.slice(0, 4).join("|");
+    if (seen.has(k)) return;
+    seen.add(k);
+    count[w[0]] = (count[w[0]] || 0) + 1;
+    GUNS.push({ name: w[0] + (count[w[0]] > 1 ? " (" + count[w[0]] + ")" : ""), cal: w[1], def: w[2], vel: w[3], cat });
+  });
+
+  const DEF = { gun: "AK-74M", ammo: "", zero: 100, mult: 1, sh: "0.0686", vel: null };
+  const state = Object.assign({}, DEF);
   try { Object.assign(state, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const calLabel = {};
-  CALS.forEach(g => g[1].forEach(c => calLabel[c[0]] = c[1]));
 
-  // build caliber and zero selects
-  $("cal").innerHTML = CALS.map(g => '<optgroup label="' + esc(g[0]) + '">' + g[1].map(c => '<option value="' + c[0] + '">' + esc(c[1]) + "</option>").join("") + "</optgroup>").join("");
+  const cats = CAT_ORDER.concat([...new Set(GUNS.map(g => g.cat))].filter(c => !CAT_ORDER.includes(c)));
+  $("gun").innerHTML = cats.map(c => {
+    const gs = GUNS.filter(g => g.cat === c).sort((a, b) => a.name.localeCompare(b.name, "zh"));
+    return gs.length ? '<optgroup label="' + esc(c) + '">' + gs.map(g => '<option value="' + esc(g.name) + '">' + esc(g.name) + "</option>").join("") + "</optgroup>" : "";
+  }).join("");
   $("zero").innerHTML = ZEROS.map(z => '<option value="' + z + '">' + z + " 米</option>").join("");
 
-  const ammoOf = cal => AMMO.filter(a => a[0] === cal);
-  function fillAmmo() {
-    const list = ammoOf(state.cal);
-    $("ammo").innerHTML = list.map(a => '<option value="' + esc(a[1]) + '">' + esc(a[1]) + "（穿 " + a[5] + "）" + (a[6] ? " 曳光" : "") + "</option>").join("");
-    if (!list.some(a => a[1] === state.ammo)) { state.ammo = list[0][1]; state.v0 = null; }
-    $("ammo").value = state.ammo;
-  }
-  const current = () => AMMO.find(a => a[0] === state.cal && a[1] === state.ammo) || ammoOf(state.cal)[0];
+  const gun = () => GUNS.find(g => g.name === state.gun) || GUNS.find(g => g.name === DEF.gun) || GUNS[0];
 
-  function fmtDrop(cm) {
-    const r = Math.round(cm);
-    return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r);
-  }
   function render() {
-    if (!calLabel[state.cal]) state.cal = "556x45NATO";
-    $("cal").value = state.cal;
-    fillAmmo();
+    const g = gun();
+    state.gun = g.name;
+    $("gun").value = g.name;
+    const list = A.map((a, i) => ({ a, i })).filter(x => x.a[0] === g.cal).sort((x, y) => y.a[5] - x.a[5]);
+    $("ammo").innerHTML = list.map(x => '<option value="' + x.i + '">' + esc(x.a[1]) + (x.i === g.def ? " ★" : "") + "</option>").join("");
+    let ai = list.some(x => String(x.i) === String(state.ammo)) ? +state.ammo : g.def;
+    state.ammo = ai;
+    $("ammo").value = String(ai);
     if (!ZEROS.includes(+state.zero)) state.zero = 100;
     $("zero").value = String(state.zero);
-    const a = current();
-    const v0 = state.v0 && state.v0 >= 50 ? state.v0 : a[2];
-    $("v0").value = v0;
-    $("v0reset").disabled = v0 === a[2];
+    const vel = state.vel === null || state.vel === "" || isNaN(+state.vel) ? g.vel : +state.vel;
+    if (document.activeElement !== $("vel")) $("vel").value = vel;
+    if (document.activeElement !== $("mult")) $("mult").value = (+state.mult || 1).toFixed(2);
     document.querySelectorAll(".seg").forEach(s => s.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state[s.dataset.key]))));
-
-    const Z = +state.zero, h = +state.sh;
-    let dists = (state.range === "far" ? FAR : NEAR).slice();
-    if (!dists.includes(Z) && Z <= dists[dists.length - 1]) { dists.push(Z); dists.sort((x, y) => x - y); }
-    const res = table(v0, a[3], Z, h, dists);
-
-    $("summary").innerHTML =
-      '<span class="chip">' + esc(calLabel[a[0]]) + " <b>" + esc(a[1]) + "</b></span>" +
-      '<span class="chip">伤害 <b>' + a[4] + '</b></span><span class="chip">穿透 <b>' + a[5] + "</b></span>" +
-      '<span class="chip">弹道系数 <b>' + a[3] + "</b></span>";
-
-    $("tbody").innerHTML = res.rows.map(r => {
-      if (!r.ok) return '<tr><td class="d">' + r.d + '</td><td colspan="4" class="dim">超出射程</td></tr>';
-      const lv = Math.abs(r.dropCm) <= 10 ? 0 : Math.abs(r.dropCm) <= 30 ? 1 : 2;
-      const mil = Math.abs(r.mil) < 0.05 ? "0" : (r.mil > 0 ? "↑" : "↓") + Math.abs(r.mil).toFixed(1);
-      return '<tr' + (r.d === Z ? ' class="zero"' : "") + ">" +
-        '<td class="d">' + r.d + "</td>" +
-        '<td class="drop lv' + lv + '">' + fmtDrop(r.dropCm) + "</td>" +
-        "<td>" + mil + "</td>" +
-        '<td class="dim">' + Math.round(r.tofMs) + "</td>" +
-        '<td class="dim">' + Math.round(r.v) + "</td></tr>";
-    }).join("");
-    draw(res, Z, h, dists[dists.length - 1]);
     save();
+
+    // ---- ballistics: game-style zero (angle from the gun's default ammo), then fire the chosen ammo
+    const k = 1 + vel / 100;
+    const h = +state.sh, Z = +state.zero, mult = Math.max(0.2, +state.mult || 1);
+    const da = A[g.def], am = A[ai];
+    const ref = at(fly(da[2] * k, da[3], 0, Z + 1), Z);
+    const ang = ref ? Math.atan((-ref[1] + h) / Z) : zeroAngle(am[2] * k, am[3], Z, h);
+    const pts = fly(am[2] * k, am[3], ang, DISTS[DISTS.length - 1] + 1);
+    const holds = [];
+    DISTS.concat(ZEROS.includes(Z) && !DISTS.includes(Z) ? [Z] : []).sort((x, y) => x - y).forEach(d => {
+      const p = at(pts, d);
+      if (!p) return;
+      const real = -(p[1] - h) / d * 1000;   // real mrad, + = aim point must go up
+      holds.push({ d, mil: real / mult, cm: (p[1] - h) * 100 });
+    });
+    draw(holds, Z);
+    const v0 = Math.round(am[2] * k);
+    let direct = 0;
+    for (const x of holds) { if (Math.abs(x.cm) <= 10) direct = x.d; else break; }
+    const far = holds.find(x => x.mil > 8.5);
+    $("cap").innerHTML = "把目标放在对应距离的<b>横线</b>上开枪（蓝线 = 往下压）<br>" +
+      (direct ? direct + " 米以内直接瞄（偏差小于 10 厘米） · " : "") +
+      (far ? far.d + " 米及更远超出图示 · " : "") +
+      "初速 " + v0 + " 米/秒" + (ai !== g.def ? " · 按默认弹药 " + esc(da[1]) + " 归零" : "");
   }
 
-  function draw(res, Z, h, maxD) {
-    const W = 420, H = 210, L = 40, R = 8, T = 14, B = 26;
-    const pts = res.pts.filter(p => p[0] <= maxD + 1).map(p => [p[0], (p[1] - h) * 100]);
-    let lo = Math.min(-15, ...pts.map(p => p[1])), hi = Math.max(15, ...pts.map(p => p[1]));
-    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
-    const X = d => L + d / maxD * (W - L - R);
-    const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
-    const nice = v => { const e = Math.pow(10, Math.floor(Math.log10(v))); const m = v / e; return (m < 2 ? 1 : m < 5 ? 2 : 5) * e; };
-    let g = '<rect x="' + L + '" y="' + Y(10) + '" width="' + (W - L - R) + '" height="' + (Y(-10) - Y(10)) + '" fill="var(--good-soft)"/>';
-    const ys = nice((hi - lo) / 4);
-    for (let v = Math.ceil(lo / ys) * ys; v <= hi; v += ys) {
-      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--line)"/>';
-      g += '<text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">' + Math.round(v) + "</text>";
+  function draw(holds, Z) {
+    const C = 200, R = 192;
+    // pick hold lines: keep holds within ~8.5 marks, prefer round distances, keep labels apart
+    const PRI = [100, 200, 300, 400, 500, 600, 800, 1000, 150, 250, 350, 450, 700, 900, 75, 50];
+    const cand = holds.filter(x => Math.abs(x.mil) <= 8.5);
+    const maxHold = Math.max(2, ...cand.filter(x => x.mil > 0).map(x => x.mil));
+    const M = Math.min(9, Math.max(4, Math.ceil(maxHold + 0.8)));
+    const ppm = (R - 14) / M;  // px per mark
+    const kept = [];
+    PRI.forEach(d => {
+      const x = cand.find(c => c.d === d);
+      if (!x) return;
+      const y = x.mil * ppm;
+      if (Math.abs(y) < 14) return;
+      if (kept.every(k => Math.abs(k.mil * ppm - y) >= 23)) kept.push(x);
+    });
+
+    let s = '<defs><radialGradient id="glass" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#d9dccb"/><stop offset="75%" stop-color="#c3c7b1"/><stop offset="100%" stop-color="#8f937c"/></radialGradient>' +
+      '<clipPath id="clip"><circle cx="' + C + '" cy="' + C + '" r="' + R + '"/></clipPath></defs>';
+    s += '<circle cx="' + C + '" cy="' + C + '" r="' + (R + 6) + '" fill="#050604"/>';
+    s += '<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="url(#glass)"/>';
+    s += '<g clip-path="url(#clip)">';
+    // crosshair
+    s += '<line x1="' + (C - R) + '" x2="' + (C + R) + '" y1="' + C + '" y2="' + C + '" stroke="#111" stroke-width="1.2"/>';
+    s += '<line x1="' + C + '" x2="' + C + '" y1="' + (C - R) + '" y2="' + (C + R) + '" stroke="#111" stroke-width="1.2"/>';
+    const every = ppm >= 22 ? 1 : ppm >= 13 ? 2 : 5;
+    for (let i = 1; i <= M; i++) {
+      const o = i * ppm;
+      const big = 7, small = 4;
+      // vertical axis ticks (both sides of center)
+      [C + o, C - o].forEach(y => { s += '<line x1="' + (C - big) + '" x2="' + (C + big) + '" y1="' + y + '" y2="' + y + '" stroke="#111" stroke-width="1.2"/>'; });
+      [C + o, C - o].forEach(x => { s += '<line y1="' + (C - big) + '" y2="' + (C + big) + '" x1="' + x + '" x2="' + x + '" stroke="#111" stroke-width="1.2"/>'; });
+      if (ppm >= 16) {
+        const hm = o - ppm / 2;
+        [C + hm, C - hm].forEach(y => { s += '<line x1="' + (C - small) + '" x2="' + (C + small) + '" y1="' + y + '" y2="' + y + '" stroke="#111" stroke-width="1"/>'; });
+        [C + hm, C - hm].forEach(x => { s += '<line y1="' + (C - small) + '" y2="' + (C + small) + '" x1="' + x + '" x2="' + x + '" stroke="#111" stroke-width="1"/>'; });
+      }
+      if (i % every === 0) {
+        s += '<text x="' + (C - 26) + '" y="' + (C + o + 4) + '" text-anchor="end" font-size="12" font-family="IBM Plex Mono, monospace" fill="#2b2d24">' + i + "</text>";
+        s += '<text x="' + (C + o) + '" y="' + (C - 11) + '" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="#2b2d24">' + i + "</text>";
+        s += '<text x="' + (C - o) + '" y="' + (C - 11) + '" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="#2b2d24">' + i + "</text>";
+      }
     }
-    const xs = nice(maxD / 5);
-    for (let d = xs; d <= maxD; d += xs) g += '<text x="' + X(d) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">' + d + "</text>";
-    g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="var(--ink)" stroke-dasharray="4 4"/>';
-    g += '<path d="' + pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ") + '" fill="none" stroke="var(--brass)" stroke-width="2.5"/>';
-    if (Z <= maxD) g += '<circle cx="' + X(Z) + '" cy="' + Y(0) + '" r="5" fill="var(--good)" stroke="var(--panel)" stroke-width="2"/>';
-    g += '<text x="' + (W - R) + '" y="' + (T + 2) + '" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Noto Sans SC, sans-serif">厘米 / 米</text>';
-    $("svg").innerHTML = g;
+    // hold lines
+    const line = (x, col, label) => {
+      const y = C + x.mil * ppm;
+      let t = '<line x1="' + (C - 22) + '" x2="' + (C + 30) + '" y1="' + y + '" y2="' + y + '" stroke="' + col + '" stroke-width="3" stroke-linecap="round"/>';
+      t += '<rect x="' + (C + 34) + '" y="' + (y - 10) + '" width="' + (label.length * 8.6 + 12) + '" height="20" rx="3" fill="#14160f" fill-opacity=".85"/>';
+      t += '<text x="' + (C + 40) + '" y="' + (y + 5) + '" font-size="14" font-weight="600" font-family="IBM Plex Mono, monospace" fill="' + col + '">' + label + "</text>";
+      return t;
+    };
+    kept.forEach(x => { s += line(x, x.mil > 0 ? "#ff6a00" : "#2f7fd6", x.d + "m"); });
+    s += "</g>";
+    $("svg").innerHTML = s;
   }
 
-  $("cal").addEventListener("change", e => { state.cal = e.target.value; state.ammo = ""; state.v0 = null; render(); });
-  $("ammo").addEventListener("change", e => { state.ammo = e.target.value; state.v0 = null; render(); });
+  $("gun").addEventListener("change", e => { state.gun = e.target.value; state.ammo = ""; state.vel = null; render(); });
+  $("ammo").addEventListener("change", e => { state.ammo = e.target.value; render(); });
   $("zero").addEventListener("change", e => { state.zero = +e.target.value; render(); });
-  $("v0").addEventListener("input", e => { const v = parseFloat(e.target.value); if (v >= 50 && v <= 2000) { state.v0 = v; render(); } });
-  $("v0").addEventListener("blur", () => render());
-  $("v0reset").addEventListener("click", () => { state.v0 = null; render(); });
-  document.querySelectorAll(".seg").forEach(s => s.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[s.dataset.key] = b.dataset.v; render(); }));
+  $("mult").addEventListener("input", e => { const v = parseFloat(e.target.value); if (v >= 0.2 && v <= 5) { state.mult = v; render(); } });
+  $("vel").addEventListener("input", e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > -90 && v < 200) { state.vel = v; render(); } });
+  $("reset").addEventListener("click", () => { state.mult = 1; state.sh = DEF.sh; state.vel = null; render(); });
+  document.querySelectorAll(".seg").forEach(sg => sg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[sg.dataset.key] = b.dataset.v; render(); }));
   render();
 })();
 </script>
